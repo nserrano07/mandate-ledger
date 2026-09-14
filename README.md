@@ -13,8 +13,25 @@ account's context rule. The agent authenticates with its own Ed25519 key
 mandate is bound to that specific identity, not just "anyone who stays
 under the limit."
 
-**Live demo**: https://mandate.nataliaserranoortiz.com (or the current
-Vercel URL while DNS propagates)
+**Live demo**: https://scripts-nu-wine.vercel.app (moving to
+`mandate.nataliaserranoortiz.com` once DNS finishes propagating) — a real
+control panel that signs and submits actual testnet transactions through
+the deployed contracts. Secrets live only in Vercel's environment variable
+dashboard, never in this repo or the page itself.
+
+**Slides**: [`docs/mandate-ledger-slides.pdf`](docs/mandate-ledger-slides.pdf)
+— architecture, the mandate used in this demo, and screenshots of a real
+run (settled + rejected payments, independently verifiable on
+[stellar.expert](https://stellar.expert)).
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-activity.png" width="70%" alt="Mandate Ledger control panel showing one settled and one rejected payment" />
+</p>
+
+## Documentation
+
+- [`docs/mandate-ledger-slides.pdf`](docs/mandate-ledger-slides.pdf) — the pitch deck (architecture, the mandate, live results)
+- [`docs/screenshots/`](docs/screenshots/) — raw screenshots used in the deck above (dashboard, a settled+rejected run, the stellar.expert confirmation)
 
 ## Structure
 
