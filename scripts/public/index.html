@@ -566,7 +566,20 @@ async function runDecision(toId, toLabel, amountXlm) {
   }
 }
 
+// Soroban RPC's read-only simulate endpoint can lag a moment behind a
+// just-confirmed transaction (separate snapshot from tx history), so a
+// single loadState() right after "SETTLED" can still show the old value.
+// Poll until the live read actually reflects what we just submitted.
+async function refreshStateUntil(expectFn, attempts = 5, delayMs = 1200) {
+  for (let i = 0; i < attempts; i++) {
+    await loadState();
+    if (expectFn(STATE)) return;
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs));
+  }
+}
+
 async function submitAdminAction({ payload, label, resultBoxId }) {
+  const recipients = STATE.recipients;
   const resultBox = document.getElementById(resultBoxId);
   const ts = new Date().toTimeString().slice(0, 8);
   const row = addActivityRow({
@@ -602,7 +615,20 @@ async function submitAdminAction({ payload, label, resultBoxId }) {
       resultBox.innerHTML = `<span style="color:var(--success)">Updated on-chain (mandate v${mandateVersion}).</span>`;
       document.getElementById("kpiLimit").classList.add("flash");
       setTimeout(() => document.getElementById("kpiLimit").classList.remove("flash"), 900);
-      await loadState();
+
+      if (payload.newMaxAmountXlm !== undefined) {
+        await refreshStateUntil((s) => s.mandate.max_amount_xlm === payload.newMaxAmountXlm);
+      } else if (payload.newAllowlist !== undefined) {
+        const expectedLabels = new Set(
+          payload.newAllowlist.map((addr) => Object.keys(recipients).find((l) => recipients[l] === addr) || addr)
+        );
+        await refreshStateUntil((s) => {
+          const got = new Set(s.mandate.allowlist);
+          return got.size === expectedLabels.size && [...expectedLabels].every((l) => got.has(l));
+        });
+      } else {
+        await loadState();
+      }
     } else {
       statusCell.innerHTML = `<span class="pill rejected">Rejected</span>`;
       refCell.innerHTML = `<div class="reason">${result.detail || result.outcome}</div>`;
