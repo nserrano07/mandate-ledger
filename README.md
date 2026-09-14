@@ -13,10 +13,9 @@ account's context rule. The agent authenticates with its own Ed25519 key
 mandate is bound to that specific identity, not just "anyone who stays
 under the limit."
 
-**Live demo**: https://scripts-nu-wine.vercel.app (moving to
-`mandate.nataliaserranoortiz.com` once DNS finishes propagating) — a real
-control panel that signs and submits actual testnet transactions through
-the deployed contracts. Secrets live only in Vercel's environment variable
+**Live demo**: https://mandate.nataliaserranoortiz.com — a real control
+panel that signs and submits actual testnet transactions through the
+deployed contracts. Secrets live only in Vercel's environment variable
 dashboard, never in this repo or the page itself.
 
 **Slides**: [`docs/mandate-ledger-slides.pdf`](docs/mandate-ledger-slides.pdf)
