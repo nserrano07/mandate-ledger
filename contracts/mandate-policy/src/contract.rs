@@ -54,4 +54,17 @@ impl MandatePolicyContract {
     ) -> mandate::MandateData {
         mandate::get_mandate_data(&e, context_rule_id, &smart_account)
     }
+
+    /// Update an installed mandate's limit and/or allowlist. Requires
+    /// authorization from the smart account under an admin-scoped context
+    /// rule — see `mandate::update_mandate` for the authorization story.
+    pub fn update_mandate(
+        e: Env,
+        context_rule_id: u32,
+        smart_account: Address,
+        new_max_amount: Option<i128>,
+        new_allowlist: Option<Vec<Address>>,
+    ) {
+        mandate::update_mandate(&e, context_rule_id, &smart_account, new_max_amount, new_allowlist)
+    }
 }

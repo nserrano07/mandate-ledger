@@ -44,6 +44,17 @@ pub struct MandateUninstalled {
     pub context_rule_id: u32,
 }
 
+/// Event emitted when the human admin updates an installed mandate.
+#[contractevent]
+#[derive(Clone, Debug)]
+pub struct MandateUpdated {
+    #[topic]
+    pub smart_account: Address,
+    pub context_rule_id: u32,
+    pub max_amount: i128,
+    pub allowlist: Vec<Address>,
+}
+
 /// Installation parameters for the mandate policy.
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
@@ -196,6 +207,51 @@ pub fn install(
         context_rule_id: context_rule.id,
         max_amount: params.max_amount,
         allowlist: params.allowlist.clone(),
+    }
+    .publish(e);
+}
+
+/// Updates an installed mandate's limit and/or allowlist. This is the human
+/// admin's lever: the agent's own key (the `enforce()` signer) cannot reach
+/// this function — it requires authorization from the smart account under
+/// whichever context rule the caller authenticated with, which in practice
+/// means a *different*, admin-only context rule scoped to this contract
+/// (see `smart-account`'s constructor: a `CallContract(mandate_policy)`
+/// rule carrying the admin's signer, separate from the agent's transfer
+/// rule). Passing `None` for either field leaves it unchanged.
+pub fn update_mandate(
+    e: &Env,
+    context_rule_id: u32,
+    smart_account: &Address,
+    new_max_amount: Option<i128>,
+    new_allowlist: Option<Vec<Address>>,
+) {
+    smart_account.require_auth();
+
+    let mut data = get_mandate_data(e, context_rule_id, smart_account);
+
+    if let Some(max_amount) = new_max_amount {
+        if max_amount <= 0 {
+            panic_with_error!(e, MandateError::InvalidParams)
+        }
+        data.max_amount = max_amount;
+    }
+
+    if let Some(allowlist) = new_allowlist {
+        if allowlist.is_empty() {
+            panic_with_error!(e, MandateError::InvalidParams)
+        }
+        data.allowlist = allowlist;
+    }
+
+    let key = MandateStorageKey::AccountContext(smart_account.clone(), context_rule_id);
+    e.storage().persistent().set(&key, &data);
+
+    MandateUpdated {
+        smart_account: smart_account.clone(),
+        context_rule_id,
+        max_amount: data.max_amount,
+        allowlist: data.allowlist,
     }
     .publish(e);
 }

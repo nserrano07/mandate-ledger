@@ -13,6 +13,13 @@ account's context rule. The agent authenticates with its own Ed25519 key
 mandate is bound to that specific identity, not just "anyone who stays
 under the limit."
 
+The mandate isn't frozen at deploy time, either. The account carries a
+**second, admin-only context rule** — scoped to a different contract, with
+a different signer — so the human can raise/lower the limit or change the
+allowlist later via `update_mandate()`, live, without redeploying. The
+agent's key structurally cannot reach that rule, and the admin's rule can't
+move funds: two identities, two blast radiuses.
+
 **Live demo**: https://mandate.nataliaserranoortiz.com — a real control
 panel that signs and submits actual testnet transactions through the
 deployed contracts. Secrets live only in Vercel's environment variable
@@ -38,9 +45,9 @@ run (settled + rejected payments, independently verifiable on
   - `mandate-policy/` — the custom `Policy` implementing the mandate (max amount + allowlist, requires an authenticated signer)
   - `smart-account/` — the AI agent's smart account (built directly on `stellar-accounts`)
   - `ed25519-verifier/` — reusable verifier contract authenticating the agent's Ed25519 signer
-- `scripts/` — the control panel (Node/Vercel serverless functions) that submits real payment decisions through the deployed contracts
-  - `public/index.html` — the dashboard UI
-  - `api/` — Vercel serverless functions (`/api/state`, `/api/decide`) that keep secrets server-side
+- `scripts/` — the control panel (Node/Vercel serverless functions) that submits real payment decisions and mandate updates through the deployed contracts
+  - `public/index.html` — the dashboard UI (agent payments + admin mandate management)
+  - `api/` — Vercel serverless functions (`/api/state`, `/api/decide`, `/api/admin/update-mandate`) that keep secrets server-side
   - `config.js`, `invoke.js`, `mandate-auth.js` — shared logic for building and submitting the custom Soroban authorization entries this smart account requires
 
 ## Running locally
@@ -59,11 +66,12 @@ stellar keys generate my-agent-ops --network testnet --fund
 stellar keys show my-agent-ops   # -> AGENT_OPS_SECRET
 ```
 
-`AGENT_SIGNING_SECRET` is a raw Ed25519 keypair (any Stellar `Keypair.random()`
-works) registered as the smart account's `Signer::External` pubkey — see
-`scripts/deploy.md` for the full deployment walkthrough, and
-`contracts/mandate-policy/src/mandate.rs` for the policy itself.
+`AGENT_SIGNING_SECRET` / `ADMIN_SIGNING_SECRET` are each a raw Ed25519
+keypair (any Stellar `Keypair.random()` works) registered as one of the
+smart account's two `Signer::External` pubkeys — see `scripts/deploy.md`
+for the full deployment walkthrough, and `contracts/mandate-policy/src/mandate.rs`
+for the policy itself.
 
 None of this repo's committed files contain real secrets — `.env` and
-`scripts/agent-signing-key.json` are gitignored, and `deployed.json` holds
+`scripts/*-signing-key.json` are gitignored, and `deployed.json` holds
 only public contract addresses.

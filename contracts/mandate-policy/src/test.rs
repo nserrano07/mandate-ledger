@@ -176,3 +176,101 @@ fn enforce_rejects_when_no_authenticated_signer() {
         enforce(&e, &context, &Vec::new(&e), &context_rule, &smart_account);
     });
 }
+
+#[test]
+fn update_mandate_raises_limit_and_extends_allowlist() {
+    let e = Env::default();
+    let address = e.register(MockContract, ());
+    let smart_account = Address::generate(&e);
+    let token = Address::generate(&e);
+    let allowed = Address::generate(&e);
+    let new_payee = Address::generate(&e);
+    let context_rule = create_context_rule(&e, &token);
+
+    e.mock_all_auths();
+
+    e.as_contract(&address, || {
+        let params = MandateAccountParams {
+            max_amount: 1_000_000,
+            allowlist: Vec::from_array(&e, [allowed.clone()]),
+        };
+        install(&e, &params, &context_rule, &smart_account);
+    });
+
+    e.as_contract(&address, || {
+        update_mandate(
+            &e,
+            context_rule.id,
+            &smart_account,
+            Some(5_000_000),
+            Some(Vec::from_array(&e, [allowed.clone(), new_payee.clone()])),
+        );
+
+        let data = get_mandate_data(&e, context_rule.id, &smart_account);
+        assert_eq!(data.max_amount, 5_000_000);
+        assert!(data.allowlist.contains(&allowed));
+        assert!(data.allowlist.contains(&new_payee));
+    });
+
+    e.as_contract(&address, || {
+        // A payment that would have exceeded the old 1,000,000 limit, to the
+        // newly-added payee, must now succeed under the raised limit.
+        let context = transfer_context(&e, &token, &smart_account, &new_payee, 3_000_000);
+        enforce(&e, &context, &one_signer(&e), &context_rule, &smart_account);
+    });
+}
+
+#[test]
+fn update_mandate_leaves_field_unchanged_when_none() {
+    let e = Env::default();
+    let address = e.register(MockContract, ());
+    let smart_account = Address::generate(&e);
+    let token = Address::generate(&e);
+    let allowed = Address::generate(&e);
+    let context_rule = create_context_rule(&e, &token);
+
+    e.mock_all_auths();
+
+    e.as_contract(&address, || {
+        let params = MandateAccountParams {
+            max_amount: 1_000_000,
+            allowlist: Vec::from_array(&e, [allowed.clone()]),
+        };
+        install(&e, &params, &context_rule, &smart_account);
+    });
+
+    e.as_contract(&address, || {
+        // Only raise the limit; leave the allowlist untouched.
+        update_mandate(&e, context_rule.id, &smart_account, Some(2_000_000), None);
+
+        let data = get_mandate_data(&e, context_rule.id, &smart_account);
+        assert_eq!(data.max_amount, 2_000_000);
+        assert_eq!(data.allowlist.len(), 1);
+        assert!(data.allowlist.contains(&allowed));
+    });
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #3302)")]
+fn update_mandate_rejects_non_positive_amount() {
+    let e = Env::default();
+    let address = e.register(MockContract, ());
+    let smart_account = Address::generate(&e);
+    let token = Address::generate(&e);
+    let allowed = Address::generate(&e);
+    let context_rule = create_context_rule(&e, &token);
+
+    e.mock_all_auths();
+
+    e.as_contract(&address, || {
+        let params = MandateAccountParams {
+            max_amount: 1_000_000,
+            allowlist: Vec::from_array(&e, [allowed.clone()]),
+        };
+        install(&e, &params, &context_rule, &smart_account);
+    });
+
+    e.as_contract(&address, || {
+        update_mandate(&e, context_rule.id, &smart_account, Some(0), None);
+    });
+}

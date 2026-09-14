@@ -3,14 +3,14 @@
 // XDR-encoded as a named-struct ScVal::Map, per OpenZeppelin's smart-account
 // wire format (packages/accounts/README.md, "AuthPayload struct").
 //
-// The account's context rule carries one real signer: the AI agent's own
-// Ed25519 key, registered as a `Signer::External(verifier, pubkey)` and
-// authenticated via the deployed ed25519-verifier contract. So this must
-// produce a REAL signature over the auth digest OpenZeppelin defines:
+// Two identities use this account: the AI agent (External signer bound to
+// the CallContract(token) rule) and the human admin (External signer bound
+// to the CallContract(mandate_policy) rule). Either way, authorization
+// requires a REAL signature over the auth digest OpenZeppelin defines:
 //   auth_digest = sha256(signature_payload || context_rule_ids.to_xdr())
 // where `signature_payload` is the standard Soroban authorization preimage
 // hash (network id + nonce + expiration + invocation tree).
-import { Address, xdr, nativeToScVal, hash, buildAuthorizationEntryPreimage } from "@stellar/stellar-sdk";
+import { Address, xdr, nativeToScVal, buildAuthorizationEntryPreimage, hash } from "@stellar/stellar-sdk";
 
 function contextRuleIdsScVal(contextRuleId) {
   return xdr.ScVal.scvVec([xdr.ScVal.scvU32(contextRuleId)]);
@@ -47,28 +47,26 @@ function signerKeyScVal(verifierId, pubkeyBytes) {
 
 /**
  * Builds the SorobanAuthorizationEntry that authorizes `smartAccountId` to
- * be the `from` of a `transfer(from, to, amount)` call on `tokenId`, under
- * context rule `contextRuleId`, REALLY signed by the agent's Ed25519 key.
+ * invoke `functionName(...args)` on `targetContractId`, under context rule
+ * `contextRuleId`, REALLY signed by `signerKeypair`'s Ed25519 key. This is
+ * the general form — used for the agent's transfers AND the admin's
+ * `update_mandate` calls, just pointed at different contracts/rules/keys.
  */
-function buildSignedTransferAuthEntry({
+function buildSignedAuthEntry({
   smartAccountId,
-  tokenId,
-  toId,
-  amount,
+  targetContractId,
+  functionName,
+  args,
   contextRuleId,
   signatureExpirationLedger,
   verifierId,
-  agentKeypair, // stellar-sdk Keypair — .rawPublicKey() / .sign() used
+  signerKeypair, // stellar-sdk Keypair — .rawPublicKey() / .sign() used
   networkPassphrase,
 }) {
-  const fromScVal = new Address(smartAccountId).toScVal();
-  const toScVal = new Address(toId).toScVal();
-  const amountScVal = nativeToScVal(amount, { type: "i128" });
-
   const invokeArgs = new xdr.InvokeContractArgs({
-    contractAddress: new Address(tokenId).toScAddress(),
-    functionName: "transfer",
-    args: [fromScVal, toScVal, amountScVal],
+    contractAddress: new Address(targetContractId).toScAddress(),
+    functionName,
+    args,
   });
 
   const rootInvocation = new xdr.SorobanAuthorizedInvocation({
@@ -104,10 +102,10 @@ function buildSignedTransferAuthEntry({
   const contextRuleIdsXdrBytes = contextRuleIdsScVal(contextRuleId).toXDR();
   const authDigest = hash(Buffer.concat([Buffer.from(signaturePayload), Buffer.from(contextRuleIdsXdrBytes)]));
 
-  // Step 3: the agent actually signs the digest with its real Ed25519 key.
-  const signature = agentKeypair.sign(Buffer.from(authDigest));
+  // Step 3: the signer actually signs the digest with its real Ed25519 key.
+  const signature = signerKeypair.sign(Buffer.from(authDigest));
 
-  const pubkeyBytes = agentKeypair.rawPublicKey();
+  const pubkeyBytes = signerKeypair.rawPublicKey();
   const signersMap = xdr.ScVal.scvMap([
     new xdr.ScMapEntry({
       key: signerKeyScVal(verifierId, pubkeyBytes),
@@ -127,4 +125,37 @@ function buildSignedTransferAuthEntry({
   return new xdr.SorobanAuthorizationEntry({ credentials: finalCredentials, rootInvocation });
 }
 
-export { buildSignedTransferAuthEntry };
+/**
+ * Thin wrapper: authorizes `transfer(smartAccountId, toId, amount)` on
+ * `tokenId`, signed by the agent's key. Kept for callers that only deal in
+ * transfers.
+ */
+function buildSignedTransferAuthEntry({
+  smartAccountId,
+  tokenId,
+  toId,
+  amount,
+  contextRuleId,
+  signatureExpirationLedger,
+  verifierId,
+  agentKeypair,
+  networkPassphrase,
+}) {
+  return buildSignedAuthEntry({
+    smartAccountId,
+    targetContractId: tokenId,
+    functionName: "transfer",
+    args: [
+      new Address(smartAccountId).toScVal(),
+      new Address(toId).toScVal(),
+      nativeToScVal(amount, { type: "i128" }),
+    ],
+    contextRuleId,
+    signatureExpirationLedger,
+    verifierId,
+    signerKeypair: agentKeypair,
+    networkPassphrase,
+  });
+}
+
+export { buildSignedAuthEntry, buildSignedTransferAuthEntry };

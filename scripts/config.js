@@ -28,11 +28,15 @@ export function saveDeployed(data) {
 // Secrets live only in scripts/.env (gitignored) or the hosting platform's
 // environment variable dashboard — never in deployed.json.
 export function loadSecrets() {
-  const { AGENT_OPS_SECRET, AGENT_SIGNING_SECRET } = process.env;
+  const { AGENT_OPS_SECRET, AGENT_SIGNING_SECRET, ADMIN_SIGNING_SECRET } = process.env;
   if (!AGENT_OPS_SECRET || !AGENT_SIGNING_SECRET) {
     throw new Error(
       "Missing AGENT_OPS_SECRET / AGENT_SIGNING_SECRET. Copy scripts/.env.example to scripts/.env and fill in your testnet keys."
     );
   }
-  return { agentOpsSecret: AGENT_OPS_SECRET, agentSigningSecret: AGENT_SIGNING_SECRET };
+  return {
+    agentOpsSecret: AGENT_OPS_SECRET,
+    agentSigningSecret: AGENT_SIGNING_SECRET,
+    adminSigningSecret: ADMIN_SIGNING_SECRET,
+  };
 }

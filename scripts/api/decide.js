@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const result = await submitDecision({
       smartAccountId: d.smartAccountId,
       tokenId: d.tokenId,
-      contextRuleId: d.contextRuleId,
+      contextRuleId: d.agentContextRuleId,
       sourceSecret: agentOpsSecret,
       verifierId: d.ed25519VerifierId,
       agentSigningSecret,

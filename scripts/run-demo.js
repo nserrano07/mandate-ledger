@@ -20,14 +20,14 @@ const XLM = 10_000_000n; // stroops per XLM
 
 async function main() {
   const deployed = loadDeployed();
-  const required = ["smartAccountId", "tokenId", "contextRuleId", "ed25519VerifierId", "recipients"];
+  const required = ["smartAccountId", "tokenId", "agentContextRuleId", "ed25519VerifierId", "recipients"];
   for (const key of required) {
     if (!(key in deployed)) {
       throw new Error(`Missing "${key}" in scripts/deployed.json — run deploy step first.`);
     }
   }
 
-  const { smartAccountId, tokenId, contextRuleId, ed25519VerifierId, recipients } = deployed;
+  const { smartAccountId, tokenId, agentContextRuleId, ed25519VerifierId, recipients } = deployed;
   const { agentOpsSecret, agentSigningSecret } = loadSecrets();
 
   const decisions = [
@@ -71,7 +71,7 @@ async function main() {
       const result = await submitDecision({
         smartAccountId,
         tokenId,
-        contextRuleId,
+        contextRuleId: agentContextRuleId,
         sourceSecret: agentOpsSecret,
         verifierId: ed25519VerifierId,
         agentSigningSecret,

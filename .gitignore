@@ -2,7 +2,7 @@
 .env
 .env.*
 !.env.example
-scripts/agent-signing-key.json
+scripts/*-signing-key.json
 *secret*
 *Secret*
 

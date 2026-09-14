@@ -1,13 +1,15 @@
 {
   "network": "testnet",
-  "version": 3,
-  "mandatePolicyId": "CCFP6TMDLPSZ4AYWP2LL6HXJWZN7GOOEZWNB4IUVHHSOIAVWQ7VKBCOQ",
+  "version": 5,
+  "mandatePolicyId": "CCOQPXZUNCUINHER4XKMXED7AUKLK7Y3CTPBG6GBSHCH7R56E67NJNH4",
   "ed25519VerifierId": "CCPY7KDEM7R24OE7BADJHZSCZ3JZ7HMUXQIPJE52XLZ7JMIOBVCYRTCY",
-  "smartAccountId": "CAGA7HZHB7SMLZI6D4GVGVREOWUFOWAFVUAPGQYS37SMQGQFURASJO3F",
+  "smartAccountId": "CBI2KIKUM43X7IWVYWZHAMBNB3ZWOVMVIK2XYQMS2JMSGRF2Z5KL4NCQ",
   "tokenId": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-  "contextRuleId": 0,
+  "agentContextRuleId": 0,
+  "adminContextRuleId": 1,
   "adminAddress": "GBTLHDKWGBWXWWYTUOFP4IWSP2KO52T2L2HY2CZLIH2TKNDAMA3V22BI",
   "agentSigningPubkey": "GAHH643QRI4EBWKLM4DVHR5LREEDGQTNOME5LM3X2NRDF5GPCBF2KJ5H",
+  "adminSigningPubkey": "GABJBG5EYS2SSU2RLRNOPWRLBEX5IVMZNG23HAKBMSOJJYG3VA5NFNGZ",
   "recipients": {
     "cafe_supplier": "GBU42NEZMRUH26SU72D4SWT7CATL6MO7XBIUZIBYXBVVM5NKBGZPD5L2",
     "cloud_provider": "GAVTT2O7ZTHLJCSZXAHL3AWWFW4HHLK22DM2ONGI4TTU2VGPY5CH2G6H",
@@ -17,5 +19,5 @@
     "max_amount_xlm": 100,
     "allowlist": ["cafe_supplier", "cloud_provider"]
   },
-  "notes": "Public-safe contract IDs and addresses only. Agent secret keys live in scripts/.env (AGENT_OPS_SECRET, AGENT_SIGNING_SECRET) and are never written here. v3: keys rotated after the v2 agent keys were exposed in a public repo (site/index.html)."
+  "notes": "Public-safe contract IDs and addresses only. Secrets live in scripts/.env (AGENT_OPS_SECRET, AGENT_SIGNING_SECRET, ADMIN_SIGNING_SECRET). v5: added a second, admin-only context rule (id 1, scoped to CallContract(mandate_policy)) so the human admin can update the mandate's limit/allowlist post-deploy via update_mandate(), without the agent's key ever being able to reach it."
 }
