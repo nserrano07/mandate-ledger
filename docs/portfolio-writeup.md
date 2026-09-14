@@ -97,12 +97,35 @@ secrets never touch the browser or the public repo.
 - **Deployment across a broken toolchain.** Windows Smart App Control
   blocked the Rust build tooling entirely; solved by building inside a
   headless WSL2 Ubuntu environment instead of fighting the host OS policy.
+- **Production-style debugging on a live chain.** Noticed the on-chain
+  allowlist had shrunk to a single payee mid-session with no obvious cause
+  in the app logs. Rather than guess, queried the mandate-policy contract's
+  own event history directly (`server.getEvents()`) to find the exact
+  transaction and timestamp responsible, which correctly ruled out the
+  automation scripts before confirming the change was a manual admin action
+  from earlier testing. The investigation surfaced a genuine design gap —
+  one submission could silently couple a limit change with an allowlist
+  change — which became the next fix rather than a one-off explanation.
+- **Safety UX for an irreversible on-chain action.** The single mandate-update
+  form was split into two independent admin panels (spending limit vs.
+  allowed payees) so one submission can only ever change one thing. Both
+  panels require an arm-then-confirm double click (button reads "Confirm?"
+  for 4 seconds before it will actually submit) rather than firing on the
+  first click. The activity table visually separates agent-initiated rows
+  from admin-initiated rows (distinct left-border color per identity), and
+  rejected payments show a plain-language, context-enriched reason (e.g.
+  "Requested 500 XLM — mandate allows up to 100 XLM") instead of a bare
+  contract error code.
+- **The ledger is a real number, not a label.** Added a live read of the
+  smart account's actual on-chain XLM balance (a read-only simulated call
+  to the token contract's `balance()`) as the dashboard's headline KPI —
+  it visibly drops after every settled agent payment, which is what makes
+  "ledger" more than a name for the demo.
 
 ## What I'd extend next
 
 - Persist the activity log (currently per-session only) via Soroban event
-  indexing instead of client-side state.
-- A richer admin audit trail — who changed what, when, surfaced in the UI
-  rather than just on-chain events.
+  indexing instead of client-side state — the admin/agent split already
+  visible in the UI would then survive a page reload, not just a session.
 - Multi-admin support (an M-of-N rule instead of a single admin signer),
   using OpenZeppelin's own threshold policies.
