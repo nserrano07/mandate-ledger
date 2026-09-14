@@ -7,7 +7,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { loadDeployed, loadSecrets } from "./config.js";
-import { submitDecision, submitMandateUpdate, getLiveMandateData } from "./invoke.js";
+import { submitDecision, submitMandateUpdate, getLiveMandateData, getAccountBalance } from "./invoke.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -23,14 +23,18 @@ app.get("/api/state", async (req, res) => {
   const d = loadDeployed();
   try {
     const { agentOpsSecret } = loadSecrets();
-    const live = await getLiveMandateData({
-      mandatePolicyId: d.mandatePolicyId,
-      agentContextRuleId: d.agentContextRuleId,
-      smartAccountId: d.smartAccountId,
-      readerSecret: agentOpsSecret,
-    });
+    const [live, balance] = await Promise.all([
+      getLiveMandateData({
+        mandatePolicyId: d.mandatePolicyId,
+        agentContextRuleId: d.agentContextRuleId,
+        smartAccountId: d.smartAccountId,
+        readerSecret: agentOpsSecret,
+      }),
+      getAccountBalance({ tokenId: d.tokenId, smartAccountId: d.smartAccountId, readerSecret: agentOpsSecret }),
+    ]);
     res.json({
       mandate: { max_amount_xlm: live.max_amount_xlm, allowlist: labelizeAllowlist(live.allowlist, d.recipients) },
+      balanceXlm: balance,
       contracts: {
         mandatePolicyId: d.mandatePolicyId,
         smartAccountId: d.smartAccountId,

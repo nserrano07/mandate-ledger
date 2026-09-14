@@ -3,7 +3,7 @@
 // The mandate itself is read LIVE from chain (it can change post-deploy via
 // update_mandate), never trusted from deployed.json's deploy-time snapshot.
 import { loadDeployed, loadSecrets } from "../config.js";
-import { getLiveMandateData } from "../invoke.js";
+import { getLiveMandateData, getAccountBalance } from "../invoke.js";
 
 function labelizeAllowlist(addresses, recipients) {
   const byAddr = Object.fromEntries(Object.entries(recipients).map(([label, addr]) => [addr, label]));
@@ -21,14 +21,18 @@ export default async function handler(req, res) {
 
   try {
     const { agentOpsSecret } = loadSecrets();
-    const live = await getLiveMandateData({
-      mandatePolicyId: d.mandatePolicyId,
-      agentContextRuleId: d.agentContextRuleId,
-      smartAccountId: d.smartAccountId,
-      readerSecret: agentOpsSecret,
-    });
+    const [live, balance] = await Promise.all([
+      getLiveMandateData({
+        mandatePolicyId: d.mandatePolicyId,
+        agentContextRuleId: d.agentContextRuleId,
+        smartAccountId: d.smartAccountId,
+        readerSecret: agentOpsSecret,
+      }),
+      getAccountBalance({ tokenId: d.tokenId, smartAccountId: d.smartAccountId, readerSecret: agentOpsSecret }),
+    ]);
     res.status(200).json({
       mandate: { max_amount_xlm: live.max_amount_xlm, allowlist: labelizeAllowlist(live.allowlist, d.recipients) },
+      balanceXlm: balance,
       contracts,
       recipients: d.recipients,
     });

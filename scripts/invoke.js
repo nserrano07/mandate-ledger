@@ -38,6 +38,35 @@ export async function getLiveMandateData({ mandatePolicyId, agentContextRuleId, 
 }
 
 /**
+ * Reads the smart account's current XLM balance via a read-only simulated
+ * call to the token contract's `balance(id)`. This is what makes the
+ * "ledger" framing real rather than decorative — an actual number that
+ * drops as the agent spends, not just a label.
+ */
+export async function getAccountBalance({ tokenId, smartAccountId, readerSecret }) {
+  const readerKeypair = Keypair.fromSecret(readerSecret);
+  const readerAccount = await server.getAccount(readerKeypair.publicKey());
+
+  const op = Operation.invokeContractFunction({
+    contract: tokenId,
+    function: "balance",
+    args: [new Address(smartAccountId).toScVal()],
+  });
+
+  const tx = new TransactionBuilder(readerAccount, { fee: BASE_FEE, networkPassphrase: NETWORK_PASSPHRASE })
+    .addOperation(op)
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (rpc.Api.isSimulationError(sim)) {
+    throw new Error(`balance simulation failed: ${sim.error}`);
+  }
+  const native = scValToNative(sim.result.retval);
+  return Number(native) / 1e7;
+}
+
+/**
  * Decodes a Soroban contract panic code out of a simulation/tx error
  * string, e.g. "...Error(Contract, #3304)..." -> 3304, and maps it to a
  * human explanation using the mandate-policy error table.
