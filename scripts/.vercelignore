@@ -1,0 +1,8 @@
+# Defense in depth: never upload secrets, even redundantly with .gitignore.
+.env
+.env.*
+!.env.example
+agent-signing-key.json
+*secret*
+*Secret*
+results.json

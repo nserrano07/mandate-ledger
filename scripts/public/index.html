@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mandate Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-sunken: #f1f5f9;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --ink: #0f172a;
+    --ink-soft: #475569;
+    --ink-faint: #94a3b8;
+
+    --accent: #3538cd;
+    --accent-hover: #2c2fa8;
+    --accent-soft: #eef2ff;
+    --accent-border: #c7d2fe;
+
+    --success: #067647;
+    --success-soft: #ecfdf3;
+    --success-border: #abefc6;
+
+    --danger: #b42318;
+    --danger-soft: #fef3f2;
+    --danger-border: #fecdca;
+
+    --warn: #93500a;
+    --warn-soft: #fffaeb;
+    --warn-border: #fedf89;
+
+    --header-bg: #0b1220;
+    --header-ink: #f1f5f9;
+    --header-ink-soft: #8b97ab;
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 14.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  header {
+    background: var(--header-bg); color: var(--header-ink);
+    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(155deg, var(--accent), #6366f1);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .brand-mark svg { width: 14px; height: 14px; }
+  .brand h1 { font-size: 15px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .brand .sub { font-size: 12px; color: var(--header-ink-soft); margin-top: 1px; }
+
+  .net-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12.5px; font-weight: 500; color: var(--header-ink-soft);
+    border: 1px solid rgba(255,255,255,0.14); border-radius: 100px; padding: 5px 12px 5px 10px;
+  }
+  .net-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  @media (prefers-reduced-motion: reduce) { .net-dot { animation: none; } }
+
+  .banner {
+    background: var(--warn-soft); border-bottom: 1px solid var(--warn-border); color: var(--warn);
+    font-size: 12.5px; padding: 9px 32px; text-align: center;
+  }
+  .banner b { font-weight: 600; }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 32px 56px; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; justify-content: space-between; }
+  h2 .hint { font-weight: 400; font-size: 12.5px; color: var(--ink-faint); }
+  section { margin-bottom: 32px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow-sm); }
+  .kpi .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint); margin-bottom: 8px; }
+  .kpi .value { font-size: 1.55rem; font-weight: 600; letter-spacing: -0.01em; }
+  .kpi .value.success { color: var(--success); }
+  .kpi .value.danger { color: var(--danger); }
+  .kpi .foot { font-size: 12px; color: var(--ink-soft); margin-top: 3px; }
+  .kpi .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+  .kpi .chip { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 2px 7px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); padding: 20px 22px; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip-btn {
+    font-family: "IBM Plex Sans"; font-size: 12.5px; font-weight: 500; color: var(--ink-soft);
+    background: var(--surface-sunken); border: 1px solid var(--border); border-radius: 100px;
+    padding: 6px 13px; cursor: pointer; transition: background .12s, border-color .12s;
+  }
+  .chip-btn:hover { background: var(--accent-soft); border-color: var(--accent-border); color: var(--accent); }
+  .chip-btn.danger:hover { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
+
+  .form-grid { display: grid; grid-template-columns: 1.4fr 1.4fr 0.8fr auto; gap: 12px; align-items: end; }
+  @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .field label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-faint); }
+  .field select, .field input {
+    font-family: "IBM Plex Sans"; font-size: 13.5px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 7px; padding: 9px 11px; width: 100%;
+  }
+  .field input[type="text"], .field input[type="number"] { font-family: "IBM Plex Mono", monospace; }
+  #customAddrWrap { display: none; }
+
+  .btn-primary {
+    font-family: "IBM Plex Sans"; font-weight: 600; font-size: 13.5px; color: #fff;
+    background: var(--accent); border: none; border-radius: 7px; padding: 10px 20px; cursor: pointer; white-space: nowrap;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:disabled { background: var(--ink-faint); cursor: wait; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-sm); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 620px; }
+  thead th {
+    text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-faint); font-weight: 600; padding: 11px 16px; background: var(--surface-sunken); border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr.pending { opacity: 0.65; }
+  .cell-time { color: var(--ink-faint); white-space: nowrap; }
+  .cell-recipient .addr { display: block; color: var(--ink-faint); font-size: 11.5px; margin-top: 1px; }
+  .cell-amount { font-weight: 600; white-space: nowrap; }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; border-radius: 100px; padding: 3px 10px; }
+  .pill.settled { background: var(--success-soft); color: var(--success); border: 1px solid var(--success-border); }
+  .pill.rejected { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger-border); }
+  .pill.pending { background: var(--surface-sunken); color: var(--ink-faint); border: 1px solid var(--border); }
+
+  .cell-ref { max-width: 260px; }
+  .cell-ref .reason { color: var(--danger); font-size: 12.5px; }
+  .cell-ref .code { color: var(--ink-faint); font-size: 11.5px; }
+  .cell-ref a { font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  .empty-row td { text-align: center; color: var(--ink-faint); padding: 28px 16px; font-size: 13px; }
+
+  footer {
+    border-top: 1px solid var(--border); padding: 18px 32px;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    font-size: 12px; color: var(--ink-faint);
+  }
+  footer a { color: var(--ink-soft); }
+  footer .addrs { display: flex; gap: 18px; flex-wrap: wrap; }
+  footer .addrs span.k { color: var(--ink-faint); margin-right: 5px; }
+  footer .addrs a { font-family: "IBM Plex Mono", monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L4 6v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-4z" stroke="white" stroke-width="2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <h1>Mandate Ledger</h1>
+      <div class="sub">Soroban smart account &middot; OpenZeppelin stellar-accounts</div>
+    </div>
+  </div>
+  <span class="net-badge"><span class="net-dot"></span>Stellar Testnet</span>
+</header>
+
+<div class="banner">Local control panel &mdash; secrets stay server-side in <span class="mono">scripts/.env</span>, never sent to this page. Runs against Stellar <b>testnet</b> only.</div>
+
+<main>
+  <section>
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Limit per transaction</div>
+        <div class="value" id="kpiLimit">&hellip;</div>
+        <div class="foot">Set once, at deployment</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Allowed payees</div>
+        <div class="value" id="kpiPayeeCount">&hellip;</div>
+        <div class="chips" id="kpiPayees"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Settled this session</div>
+        <div class="value success" id="kpiSettled">0</div>
+        <div class="foot">Confirmed on testnet</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Rejected this session</div>
+        <div class="value danger" id="kpiRejected">0</div>
+        <div class="foot">Blocked by the mandate</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Propose a payment <span class="hint">as the AI agent</span></h2>
+    <div class="card">
+      <div class="presets" id="presets"></div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="recipient">Recipient</label>
+          <select id="recipient"></select>
+        </div>
+        <div class="field" id="customAddrWrap">
+          <label for="customAddr">Address (G...)</label>
+          <input id="customAddr" type="text" maxlength="56" placeholder="G..." />
+        </div>
+        <div class="field">
+          <label for="amount">Amount (XLM)</label>
+          <input id="amount" type="number" min="0" step="0.0000001" value="25" />
+        </div>
+        <div class="field">
+          <button class="btn-primary" id="submitBtn">Submit payment</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="margin-bottom: 0;">
+    <h2>Activity</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Recipient</th><th>Amount</th><th>Status</th><th>Reference</th></tr></thead>
+        <tbody id="activityBody">
+          <tr class="empty-row"><td colspan="5">No payments proposed yet this session</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="addrs" id="fAddrs"></div>
+  <a href="https://github.com/OpenZeppelin/stellar-contracts" target="_blank">OpenZeppelin stellar-contracts ↗</a>
+</footer>
+
+<script>
+let STATE = null;
+let counts = { settled: 0, rejected: 0 };
+
+function short(addr) { return addr.slice(0, 7) + "…" + addr.slice(-6); }
+
+async function loadState() {
+  const res = await fetch("/api/state");
+  STATE = await res.json();
+
+  document.getElementById("kpiLimit").innerHTML = `${STATE.mandate.max_amount_xlm} <span style="font-size:1rem;font-weight:500;color:var(--ink-faint)">XLM</span>`;
+  document.getElementById("kpiPayeeCount").textContent = STATE.mandate.allowlist.length;
+  document.getElementById("kpiPayees").innerHTML = STATE.mandate.allowlist.map((k) => `<span class="chip">${k}</span>`).join("");
+
+  document.getElementById("fAddrs").innerHTML = `
+    <span><span class="k">Mandate policy</span><a href="https://stellar.expert/explorer/testnet/contract/${STATE.contracts.mandatePolicyId}" target="_blank">${short(STATE.contracts.mandatePolicyId)} ↗</a></span>
+    <span><span class="k">Smart account</span><a href="https://stellar.expert/explorer/testnet/contract/${STATE.contracts.smartAccountId}" target="_blank">${short(STATE.contracts.smartAccountId)} ↗</a></span>
+  `;
+
+  const recipientSelect = document.getElementById("recipient");
+  recipientSelect.innerHTML = "";
+  for (const [label, addr] of Object.entries(STATE.recipients)) {
+    const opt = document.createElement("option");
+    opt.value = addr;
+    opt.dataset.label = label;
+    const allowed = STATE.mandate.allowlist.includes(label);
+    opt.textContent = `${label} (${short(addr)})${allowed ? "" : " — not allowlisted"}`;
+    recipientSelect.appendChild(opt);
+  }
+  const customOpt = document.createElement("option");
+  customOpt.value = "__custom__";
+  customOpt.textContent = "Custom address…";
+  recipientSelect.appendChild(customOpt);
+
+  const presets = document.getElementById("presets");
+  presets.innerHTML = "";
+  const presetList = [
+    { label: "cafe_supplier", amount: 25 },
+    { label: "cloud_provider", amount: 40 },
+    { label: "cafe_supplier", amount: 60 },
+    { label: "sketchy_wallet", amount: 10, danger: true },
+    { label: "cloud_provider", amount: 500, danger: true },
+  ];
+  for (const p of presetList) {
+    const btn = document.createElement("button");
+    btn.className = "chip-btn" + (p.danger ? " danger" : "");
+    btn.textContent = `${p.amount} XLM → ${p.label}`;
+    btn.onclick = () => runDecision(STATE.recipients[p.label], p.label, p.amount);
+    presets.appendChild(btn);
+  }
+}
+
+document.getElementById("recipient").addEventListener("change", (e) => {
+  document.getElementById("customAddrWrap").style.display = e.target.value === "__custom__" ? "flex" : "none";
+});
+
+document.getElementById("submitBtn").addEventListener("click", () => {
+  const sel = document.getElementById("recipient");
+  const opt = sel.selectedOptions[0];
+  const amount = parseFloat(document.getElementById("amount").value);
+  let toId, toLabel;
+  if (opt.value === "__custom__") {
+    toId = document.getElementById("customAddr").value.trim();
+    toLabel = "custom address";
+  } else {
+    toId = opt.value;
+    toLabel = opt.dataset.label;
+  }
+  runDecision(toId, toLabel, amount);
+});
+
+async function runDecision(toId, toLabel, amountXlm) {
+  if (!toId || !toId.startsWith("G") || toId.length !== 56) {
+    alert("Enter a valid Stellar G... address.");
+    return;
+  }
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+
+  const body = document.getElementById("activityBody");
+  const emptyRow = body.querySelector(".empty-row");
+  if (emptyRow) emptyRow.remove();
+
+  const row = document.createElement("tr");
+  row.className = "pending";
+  const ts = new Date().toTimeString().slice(0, 8);
+  row.innerHTML = `
+    <td class="cell-time mono">${ts}</td>
+    <td class="cell-recipient">${toLabel}<span class="addr mono">${short(toId)}</span></td>
+    <td class="cell-amount mono">${amountXlm} XLM</td>
+    <td><span class="pill pending">Pending</span></td>
+    <td class="cell-ref">&mdash;</td>
+  `;
+  body.prepend(row);
+
+  try {
+    const res = await fetch("/api/decide", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toId, toLabel, amountXlm }),
+    });
+    const result = await res.json();
+    row.classList.remove("pending");
+    const statusCell = row.children[3];
+    const refCell = row.children[4];
+
+    if (result.error) {
+      statusCell.innerHTML = `<span class="pill rejected">Error</span>`;
+      refCell.innerHTML = `<div class="reason">${result.error}</div>`;
+    } else if (result.outcome === "SETTLED") {
+      statusCell.innerHTML = `<span class="pill settled">Settled</span>`;
+      refCell.innerHTML = `<a href="${result.explorer}" target="_blank">${short(result.hash)} ↗</a>`;
+      counts.settled++;
+    } else {
+      statusCell.innerHTML = `<span class="pill rejected">Rejected</span>`;
+      refCell.innerHTML = `<div class="reason">${result.detail || result.outcome}</div>`;
+      counts.rejected++;
+    }
+    document.getElementById("kpiSettled").textContent = counts.settled;
+    document.getElementById("kpiRejected").textContent = counts.rejected;
+  } catch (err) {
+    row.classList.remove("pending");
+    row.children[3].innerHTML = `<span class="pill rejected">Error</span>`;
+    row.children[4].innerHTML = `<div class="reason">${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+loadState();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+scripts/agent-signing-key.json
+*secret*
+*Secret*
+
+# Rust build artifacts
+contracts/target/
+
+# Node
+scripts/node_modules/
+scripts/results.json
+
+# Separate nested git repo (retired static demo, own remote) — not part of this repo
+/site/
+
+# OS
+.DS_Store
+Thumbs.db
