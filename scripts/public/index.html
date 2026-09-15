@@ -40,6 +40,9 @@
     --warn-border: #fedf89;
     --confirm: #b45309;
 
+    --limit: #0369a1;
+    --payees: #0d9488;
+
     --header-bg: #0b1220;
     --header-ink: #f1f5f9;
     --header-ink-soft: #8b97ab;
@@ -64,7 +67,7 @@
   .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
 
   header {
-    background: var(--header-bg); color: var(--header-ink);
+    background: linear-gradient(135deg, #0b1220 0%, #131233 60%, #1e1b4b 100%); color: var(--header-ink);
     padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
     gap: 16px; flex-wrap: wrap;
   }
@@ -96,6 +99,10 @@
   main { max-width: 1080px; margin: 0 auto; padding: 32px 32px 56px; }
   h2 { font-size: 15px; font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; justify-content: space-between; }
   h2 .hint { font-weight: 400; font-size: 12.5px; color: var(--ink-faint); }
+  h2 .title { display: flex; align-items: center; }
+  .role-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 9px; flex-shrink: 0; }
+  .role-dot.role-agent { background: var(--accent); }
+  .role-dot.role-admin { background: var(--admin); }
   section { margin-bottom: 32px; }
 
   /* ---- How it works (collapsible) ---- */
@@ -129,8 +136,12 @@
   .kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
   @media (max-width: 900px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 600px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
-  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow-sm); }
-  .kpi.balance { border-color: var(--accent-border); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 55%); }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--border); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow-sm); }
+  .kpi.balance { border-color: var(--accent-border); border-top-color: var(--accent); background: linear-gradient(180deg, var(--accent-soft) 0%, var(--surface) 55%); }
+  .kpi.tone-limit { border-top-color: var(--limit); }
+  .kpi.tone-payees { border-top-color: var(--payees); }
+  .kpi.tone-settled { border-top-color: var(--success); }
+  .kpi.tone-rejected { border-top-color: var(--danger); }
   .kpi .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint); margin-bottom: 8px; }
   .kpi .value { font-family: "IBM Plex Mono", monospace; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.01em; transition: color .3s; }
   .kpi.balance .value { color: var(--accent); }
@@ -299,22 +310,22 @@
         <div class="value" id="kpiBalance">&hellip;</div>
         <div class="foot">Held by the smart account</div>
       </div>
-      <div class="kpi">
+      <div class="kpi tone-limit">
         <div class="label">Limit per transaction</div>
         <div class="value" id="kpiLimit">&hellip;</div>
         <div class="foot" id="kpiLimitFoot">Adjustable by the mandate's admin</div>
       </div>
-      <div class="kpi">
+      <div class="kpi tone-payees">
         <div class="label">Allowed payees</div>
         <div class="value" id="kpiPayeeCount">&hellip;</div>
         <div class="chips" id="kpiPayees"></div>
       </div>
-      <div class="kpi">
+      <div class="kpi tone-settled">
         <div class="label">Settled this session</div>
         <div class="value success" id="kpiSettled">0</div>
         <div class="foot">Confirmed on testnet</div>
       </div>
-      <div class="kpi">
+      <div class="kpi tone-rejected">
         <div class="label">Rejected this session</div>
         <div class="value danger" id="kpiRejected">0</div>
         <div class="foot">Blocked by the mandate</div>
@@ -323,7 +334,7 @@
   </section>
 
   <section>
-    <h2>Propose a payment <span class="hint">as the AI agent</span></h2>
+    <h2><span class="title"><span class="role-dot role-agent"></span>Propose a payment</span> <span class="hint">as the AI agent</span></h2>
     <div class="card">
       <div class="presets" id="presets"></div>
       <div class="form-grid">
@@ -347,7 +358,7 @@
   </section>
 
   <section>
-    <h2>Manage the mandate <span class="hint">as the human admin &mdash; the agent's key cannot reach this</span></h2>
+    <h2><span class="title"><span class="role-dot role-admin"></span>Manage the mandate</span> <span class="hint">as the human admin &mdash; the agent's key cannot reach this</span></h2>
     <div class="admin-grid">
       <div class="admin-panel">
         <h3>Spending limit</h3>
